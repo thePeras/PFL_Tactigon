@@ -6,23 +6,19 @@ write_lines([H|T]) :- write_str(H), nl, write_lines(T).
 
 clear :- write_str("\e[2J").
 
-read_number(Number) :-
-    catch(
-        read(Term),
-        error(syntax_error(_), _),
-        (write('That is not a valid number. Please try again.'), nl, 
-        write('Enter a number: '), 
-        read_number(Number))
-    ),
-    (   number(Term) ->
-        Number = Term
-    ;   write('That is not a valid number. Please try again.'), nl,
-        write('Enter a number:'),
-        read_number(Number)
-    ).
-
 read_number_until(Prompt, Condition, Out) :-
     repeat,
     write(Prompt),
     read_number(Out),
     call(Condition, Out), !.
+
+read_number(X) :- read_number(0, X).
+read_number(X, X) :- 
+    peek_code(10), 
+    get_code(10), !.
+read_number(Curr, Out) :-
+    get_code(C),
+    C >= 48,
+    C =< 57,
+    NewCurr is Curr * 10 + (C - 48),
+    read_number(NewCurr, Out).

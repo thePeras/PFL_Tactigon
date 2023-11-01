@@ -1,13 +1,3 @@
-/* winning_condition tem cut se o state não for RoundEnd
-
-States:
-- Menu
-- FirstPlayer
-- SecondPlayer
-- GameOver
-- Exit
-*/
-
 display_menu(Lines, Actions) :-
     clear,
     write_lines(Lines),
@@ -16,7 +6,6 @@ display_menu(Lines, Actions) :-
     read_number_until('Choose option: ', between(0, MaxOption), Choice),
     nth0(Choice, Actions, Action),
     call(Action).
-
 
 menu :- repeat, display_menu([
     "Please select an option:",
