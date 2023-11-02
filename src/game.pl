@@ -33,7 +33,35 @@ winning_condition(State, Board, Winner) :-
 
 winning_condition(Board, Winner) :- 
     write('Checking winning condition!'), nl,
-    fail. %Not implemented
+    gold_tiles_ocuppied(Board, Winner),
+    write('Gold tiles occupied!'), nl;
+    pentagon_eaten(Board, Winner),
+    write('Pentagon eaten!'), nl.
+
+pentagon_eaten(Board, Winner, ) :-
+
+
+gold_tiles_ocuppied(Board, Winner) :-
+    nth0(1, Board, Row),
+    nth0(4, Row, Piece),
+    nth0(5, Board, Row2),
+    nth0(4, Row2, Piece2),
+    Piece > 0,
+    Piece < 6,
+    Piece2 > 0,
+    Piece2 < 6,
+    Winner = red_turn.
+
+gold_tiles_ocuppied(Board, Winner) :-
+    nth0(1, Board, Row),
+    nth0(4, Row, Piece),
+    nth0(5, Board, Row2),
+    nth0(4, Row2, Piece2),
+    Piece > 5,
+    Piece < 11,
+    Piece2 > 5,
+    Piece2 < 11,
+    Winner = blue_turn.
 
 play(FirstPlayer, SecondPlayer, State, Board) :-
     display_player_turn(State), %player turn
