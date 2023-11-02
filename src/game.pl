@@ -38,9 +38,19 @@ winning_condition(Board, Winner) :-
     pentagon_eaten(Board, Winner),
     write('Pentagon eaten!'), nl.
 
-pentagon_eaten(Board, Winner, ) :-
+not_in_board([], _).
+
+not_in_board([Row | Rest], X) :- 
+    \+ memberchk(X, Row),
+    not_in_board(Rest, X).
+
+pentagon_eaten(Board, red_turn) :-
+    not_in_board(Board, 5).
 
 
+pentagon_eaten(Board, blue_turn) :-
+    not_in_board(Board, 10).
+    
 gold_tiles_ocuppied(Board, Winner) :-
     nth0(1, Board, Row),
     nth0(4, Row, Piece),
@@ -146,3 +156,4 @@ move(blue_turn, Move, red_turn) :-
     write('blue moving'), nl.
 move(State, Move, blue_turn) :-
     write('red moving'), nl.
+
