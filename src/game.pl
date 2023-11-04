@@ -1,83 +1,107 @@
-play(FirstPlayer, SecondPlayer) :-
-    init_state(State, Board),
-    play(FirstPlayer, SecondPlayer, State, Board).
+:- use_module(library(lists)).
 
-init_state(State, Board) :-
-    init_board(Board),
-    State = init_round.
-
-init_board(Board) :-
-    Board = [
-        [-1,-1,-1, 0, 0,-1,-1,-1,-1,-1,-1],
-        [ 1, 0, 1, 0, 0, 0, 6, 0, 6,-1,-1],
-        [ 0, 4, 3, 0, 0, 0, 0, 8, 9, 0,-1],
-        [ 1, 3, 5, 4, 1, 0, 6, 9,10, 8, 6],
-        [-1, 0, 4, 3, 0, 0, 0, 0, 8,10, 0],
-        [-1,-1, 1, 0, 1, 0, 0, 0, 6, 0, 6],
-        [-1,-1,-1,-1,-1,-1, 0, 0,-1,-1,-1]
-    ].
-
-play(FirstPlayer, SecondPlayer, State, Board) :-
+play_game(RedPlayer-BluePlayer) :-
+    initial_state(Board),
     clear,
     display_game(Board),
-    winning_condition(State, Board, Winner),
+    game_cycle(RedPlayer-BluePlayer, State, Board).
+
+
+initial_state(Board, X, Y) :-
+    Board = [
+        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
+        [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
+        [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
+        [r-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,b-1],
+        [-1,0,r-4,r-3,0,0,0,0,b-3,b-4,0],
+        [-1,-1,r-1,0,r-1,0,0,0,b-1,0,b-1],
+        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
+    ].
+
+game_cycle(GameState-Player) :-
+    game_over(GameState-Player),
     !,
-    display_winner(Winner),
-    menu.
+    congratulate(Winner).
 
-winning_condition(init_round, _, _) :- fail.
-winning_condition(red_turn, _, _) :- fail.
-winning_condition(State, Board, Winner) :-
-    State \= init_round, State \= blue_turn,
-    winning_condition(Board, Winner).
-
-winning_condition(Board, Winner) :- 
-    write('Checking winning condition!'), nl,
-    gold_tiles_ocuppied(Board, Winner),
-    write('Gold tiles occupied!'), nl;
-    pentagon_eaten(Board, Winner),
-    write('Pentagon eaten!'), nl.
-
-not_in_board([], _).
-
-not_in_board([Row | Rest], X) :- 
-    \+ memberchk(X, Row),
-    not_in_board(Rest, X).
-
-pentagon_eaten(Board, red_turn) :-
-    not_in_board(Board, 5).
+game_cycle(GameState-Player) :-
+    choose_move(GameState, Player, Move),
+    move(GameState, Move, NewGameState),
+    next_player(Player, NextPlayer),
+    display_game(NewGameState-NextPlayer),
+    !,
+    game_cycle(NewGameState-NextPlayer).
 
 
-pentagon_eaten(Board, blue_turn) :-
-    not_in_board(Board, 10).
-    
-gold_tiles_ocuppied(Board, Winner) :-
-    nth0(1, Board, Row),
-    nth0(4, Row, Piece),
-    nth0(5, Board, Row2),
-    nth0(4, Row2, Piece2),
-    Piece > 0,
-    Piece < 6,
-    Piece2 > 0,
-    Piece2 < 6,
-    Winner = red_turn.
+captured(_, []).
+captured(Piece, [Row | Rest]) :-
+    \+ memberchk(Piece, Row),
+    eaten(Piece, Rest).
 
-gold_tiles_ocuppied(Board, Winner) :-
-    nth0(1, Board, Row),
-    nth0(4, Row, Piece),
-    nth0(5, Board, Row2),
-    nth0(4, Row2, Piece2),
-    Piece > 5,
-    Piece < 11,
-    Piece2 > 5,
-    Piece2 < 11,
-    Winner = blue_turn.
+win_pentagon_captured(Board, b) :-
+    captured(r-5, Board).
 
-play(FirstPlayer, SecondPlayer, State, Board) :-
-    display_player_turn(State), %player turn
-    get_move(State, Move, Board), %get the piece to be played and the cell to be played
-    move(State, Move, NewState),
-    play(FirstPlayer, SecondPlayer, NewState, Board).
+win_pentagon_captured(Board, r) :-
+    captured(b-5, Board).
+
+win_gold_tiles(b-Board, b) :-
+    get_piece(1,4, Board, b-_),
+    get_piece(5,6, Board, b-_).
+
+win_gold_tiles(r-Board, r) :-
+    get_piece(1,4, Board, r-_),
+    get_piece(5,6, Board, r-_).
+
+
+game_over(_-Board, Winner) :-
+    win_pentagon_captured(Board, Winner).
+
+game_over(Player-Board, Winner) :-
+    win_gold_tiles(Player-Board, Winner).
+
+combat(Player-_, Player-_, _) :-
+    write('You can\'t attack your own pieces!'), nl,
+    fail.
+combat(Player, 0, Player) :-
+    write('You can\'t attack an empty tile!'), nl,
+    fail.
+
+combat(Player1-Piece1, Player2-Piece2, Player1-Piece2) :-
+    Piece1 =< Piece2,
+    !.
+
+combat(_-3, _-1, 0).
+combat(_-4, _-3, 0).
+
+neighbours([(0, -1), (0, 1), (-1, 1), (-1, 0), (1, 1), (1, 0)]).
+
+
+/*
+choose_move(GameState, human, Move) :-
+    write('Choose a move: '), nl.
+
+choose_move(GameState, computer-Level, Move) :-
+    valid_moves(GameState, Moves),
+    choose_move(Level, GameState, Moves, Move).
+
+valid_moves(GameState, Moves) :-
+    findall(Move, move(GameState, Move, NewState)), Moves).
+
+choose_move(1, _GameState, Moves, Move) :-
+    random_select(Move, Moves, _Rest).
+
+choose_move(2, GameState, Moves, Move) :-
+    setof(Value-Mv, NewState^(member(Mv, Moves), move(GameState, Mv, NewState), evaluate_board(NewState, Value)), [_V-Move | _]).*/
+
+
+/*find_pentagon(Board, X, Y) :-
+    get_piece(X, Y, Board, r-5),
+    !.
+
+find_pentagon(Board, X, Y) :-
+    get_piece(X, Y, Board, b-5),
+    !.
+
+
 
 display_winner(Winner) :-
     write('The winner is: '),
@@ -144,16 +168,5 @@ get_coords(X, Y) :-
     read_number_until('X: ', is_valid_x_coord, X),
     read_number_until('Y: ', is_valid_y_coord, Y).
 
-is_valid_x_coord(X) :-
-    X >= 0,
-    X < 7.
 
-is_valid_y_coord(Y) :-
-    Y >= 0,
-    Y < 11.
-
-move(blue_turn, Move, red_turn) :-
-    write('blue moving'), nl.
-move(State, Move, blue_turn) :-
-    write('red moving'), nl.
-
+*/
