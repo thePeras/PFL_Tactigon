@@ -4,5 +4,6 @@
 :- consult('src/io').
 :- consult('src/menu').
 :- consult('src/game').
+:- consult('src/board').
 
 play :- menu.

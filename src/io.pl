@@ -1,3 +1,9 @@
+write_str_times(_, 0).
+write_str_times(Str, N) :- 
+    write(Str), 
+    N1 is N - 1, 
+    write_str_times(Str, N1).
+
 write_str("").
 write_str([Code | T]) :- char_code(Char, Code), write(Char), write_str(T).
 
