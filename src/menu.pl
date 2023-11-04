@@ -31,6 +31,6 @@ play_menu :- display_menu([
     "0: Go back to menu"
 ], [fail, pvp, pvc, cvc, !, !]).
 
-pvp :- play(0, 0).
-pvc :- play(0, 1).
-cvc :- play(1, 1).
+pvp :- play_game(0-0).
+pvc :- play_game(0-1).
+cvc :- play_game(1-1).
