@@ -1,8 +1,8 @@
-play_game(ChoosedLevels) :-
+play_game(ChosenLevels) :-
     clear,
     initial_state(Board),
     display_game(Board), % I think we should display the board here
-    game_cycle(r-Board, ChoosedLevels).
+    game_cycle(r-Board, ChosenLevels).
 
 initial_state(Board) :-
     Board = [
@@ -39,7 +39,7 @@ valid_moves(Board, Player, ListOfMoves) :-
 
 
 move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard) :- 
-    other_player(Player, NewPlayer),
+    change_player(Player, NewPlayer),
     valid_piece(Xi, Yi, Board, Player-Attacker),
     bfs((Xi,Yi), Attacker, Player, Board, Moves),
     memberchk((Xf,Yf), Moves),
@@ -51,9 +51,9 @@ implement_move((Xi, Yi, Xf, Yf), Board, NewPiece, NewBoard):-
     replace_board_value(Board, Xi, Yi, 0, AuxBoard),
     replace_board_value(AuxBoard, Xf, Yf, NewPiece, NewBoard).
 
-% other_player(?Player, ?OtherPlayer)
-other_player(r, b).
-other_player(b, r).
+% change_player(?Player, ?OtherPlayer)
+change_player(r, b).
+change_player(b, r).
 
 
 captured(_, []).
@@ -158,10 +158,16 @@ bfs(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, Moves) :-
 
 
 
+select_cell(Board, Player, X, Y,Value) :-
+    write('Which piece do you wish to move? '), nl,
+    get_cell(Board, X, Y, Value),
+    valid_piece(X, Y, Board, Player-_),
+    !.
 
-
-
-
+select_cell(Board, Player, X, Y,Value) :-
+    write('Invalid cell!'), nl,
+    select_cell(Board, Player, X, Y,Value).
+    
 /* 
 Asks the user for a cell number and returns the coordinates and value of the cell
 get_cell(+Board, -X, -Y, -Value) */
@@ -170,7 +176,7 @@ get_cell(Board, X, Y, Value) :-
     is_valid_cell(N, Board, Value, X, Y), 
     !.
 get_cell(Board, X, Y, Value) :-
-    write('Invalid cell!'), nl,
+    write('Invalid!'), nl,
     get_cell(Board, X, Y, Value).
 
 is_valid_cell(N, Board, Value, X, Y) :-
@@ -182,45 +188,49 @@ is_valid_cell(N, Board, Value, X, Y) :-
     nth0(Y, Line, Value),
     Value \= -1.
 
-congratulate(Winner):-
-    write('Game Over!'), nl,    
-    write('Player '), write(Winner), write(' won!'), nl,
+display_winner(Winner):-
+    write('Game Over!'), nl,
+    player_label(Winner, WinnerLabel),    
+    write(WinnerLabel), write(' player'), write(' won!'), nl,
     wait_for_enter.
 
 game_cycle(Player-Board, _):-
     game_over(Player-Board, Winner), !,
-    congratulate(Winner),
+    display_winner(Winner),
     menu.
 
-game_cycle(Player-Board, ChoosedLevels):-
+game_cycle(Player-Board, ChosenLevels):-
     player_label(Player, PlayerLabel),
-    write('Player '), write(PlayerLabel), write(' turn.'), nl,
-    level(Player, ChoosedLevels, Level),
+    write(PlayerLabel), write(' Player\'s'), write(' turn.'), nl,
+    level(Player, ChosenLevels, Level),
     choose_move(Board, Player, Level, (Xi, Yi, Xf, Yf)),
     move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
     clear,
-    clear,
     display_game(NewBoard),
     !,
-    game_cycle(NewPlayer-NewBoard, ChoosedLevels).    
+    game_cycle(NewPlayer-NewBoard, ChosenLevels).    
 
 level(r, L-_, L).
 level(b, _-L, L).
-player_label(r, '1').
-player_label(b, '2').
+player_label(r, 'Red').
+player_label(b, 'Blue').
 
 choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
-    write('Which piece do you wish to move: '), nl,
-    get_cell(Board, Xi, Yi, _),
-    write('Select a position to move to: '), nl,
-    get_cell(Board, Xf, Yf, _).
+    select_cell(Board, Player, Xi, Yi,_),
+    write('Where do you want to move it?'), nl,
+    get_cell(Board, Xf, Yf,_).
+    
+choose_move(Board, Player, human, Move):-
+    write('Invalid move! Try again.'), nl,
+    choose_move(Board, Player, human, Move).
 
 % random bot
 choose_move(Board, Player, random_bot, (Xi, Yi, Xf, Yf)) :- 
     valid_moves(Board, Player, Moves),
     length(Moves, Length),
     random(0, Length, Index),
-    nth0(Index, Moves, (Xi, Yi, Xf, Yf)).
+    nth0(Index, Moves, (Xi, Yi, Xf, Yf)),
+    wait_for_enter.
 
 % greedy bot using the evaluation function and the minimax algorithm
 choose_move(Board, Player, smart_bot, (Xi, Yi, Xf, Yf)) :-
@@ -237,78 +247,3 @@ evaluate_moves(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [(Value, (Xi, Yi, Xf, Y
     evaluate_moves(Board, Player, Rest, EvaluatedMoves).
 
 %TODO: evaluate_board
-
-
-/*choose_move(GameState, computer-Level, Move) :-
-    valid_moves(GameState, Moves),
-    choose_move(Level, GameState, Moves, Move).
-
-valid_moves(GameState, Moves) :-
-    findall(Move, move(GameState, Move, NewState)), Moves).
-
-choose_move(1, _GameState, Moves, Move) :-
-    random_select(Move, Moves, _Rest).
-
-choose_move(2, GameState, Moves, Move) :-
-    setof(Value-Mv, NewState^(member(Mv, Moves), move(GameState, Mv, NewState), evaluate_board(NewState, Value)), [_V-Move | _]).*/
-
-
-/*find_pentagon(Board, X, Y) :-
-    get_piece(X, Y, Board, r-5),
-    !.
-
-find_pentagon(Board, X, Y) :-
-    get_piece(X, Y, Board, b-5),
-    !.
-
-
-
-display_winner(Winner) :-
-    write('The winner is: '),
-    write(Winner), nl.
-
-display_player_turn(blue_turn) :-
-    write('Blue Player turn'), nl.
-display_player_turn(State) :-
-    write('Red Player turn'), nl.
-
-display_game(Board) :-
-    write('Board printed!'), nl.
-
-get_move(State, Move, Board) :-
-    get_piece_to_move(State, Board, X, Y, Piece),
-    write('You select: '),
-    write(Piece), nl,
-    get_valid_move(State, Board, X, Y, Piece, Move).
-    % Do something with the move
-    write('Moved!'), nl.
-
-% This gets the piece to move, validates and verifies if it is from the player
-get_piece_to_move(State, Board, X, Y, Piece) :-
-    repeat,
-    write('Piece to Move:'), nl,
-    get_coords(X, Y),
-    nth0(X, Board, Row),
-    nth0(Y, Row, Piece),
-    is_piece_from_player(State, Piece), !.
-
-% This gets the slot to move, validates and verifies if it is valid
-get_valid_move(State, Board, X, Y, Piece, Move) :-
-    repeat,
-    write('Move to:'), nl,
-    get_coords(NEXT_X, NEXT_Y),
-    nth0(NEXT_X, Board, NEXT_Row),
-    nth0(NEXT_Y, NEXT_Row, NEXT_Piece),
-    NEXT_Piece >= 0,
-    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Piece),
-    Move = [X, Y, NEXT_X, NEXT_Y], !.
-
-% Make this
-validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter),
-    write('Validating move!'), nl,
-    is_occuppied(NEXT_X, NEXT_Y, Board), %break here, change for is not_occuppied
-    nth0(X, Board, Row),
-    nth0(Y, Row, Piece),
-    Counter1 is Counter - 1,
-    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter1).
-*/
