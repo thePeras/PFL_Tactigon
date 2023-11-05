@@ -30,7 +30,21 @@ instructions_menu :- clear, display_menu([
     " - Pentagons, can move up to 4 spaces.",
     "",
     "\e[1mCombat \e[0m",
-    "TODO",
+    "The result of the combat is defined in the table below:",
+    "",
+    " Defender |  Circle  | Triangle |  Square  | Pentagon |",
+    "Atacker   |-------------------------------------------|",
+    "Circle    | Result 1 | Result 1 | Result 1 | Result 1 |",
+    "Triangle  | Result 2 | Result 1 | Result 1 | Result 1 |",
+    "Square    | Result 3 | Result 2 | Result 1 | Result 1 |",
+    "Pentagon  | Result 3 | Result 3 | Result 3 | Result 1 |",
+    "",
+    "  Result 1 - Defender is captured",
+    "  Result 2 - Both pieces are captured",
+    "  Result 3 - The attacker cannot atack this piece",
+    "",
+    "Have fun!",
+    "",
     "0: Go back to menu"
 ], [fail]).
 
