@@ -87,16 +87,15 @@ game_over(_-Board, Winner) :-
 game_over(Player-Board, Winner) :-
     win_gold_tiles(Player-Board, Winner).
 
-combat(Player-_, Player-_, _) :-
+% combat(+Attacker, +Defender, -ResultingPiece)
+combat(Player-_, Player-_, _) :- 
     !, fail.
-combat(Player, 0, Player).
-
-combat(Player1-AttackerPiece, Player2-AttackedPiece, Player1-AttackerPiece) :-
+combat(Attacker, 0, Attacker).
+combat(Attacker-AttackerPiece, Defender-AttackedPiece, Attacker-AttackerPiece) :-
     AttackerPiece =< AttackedPiece,
     !.
-
-combat(_-3, _-1, 0).
-combat(_-4, _-3, 0).
+combat(_-3, _-1, 0). % Attacker is a triangle and defender is a circle, both will be removed
+combat(_-4, _-3, 0). % Attacker is a square and defender is a triangle, both will be removed
 
 neighboursOffSet([(0, -1), (0, 1), (-1, -1), (-1, 0), (1, 1), (1, 0)]).
 get_neighbours(Xi, Yi, Player-Piece, Board, Neighbours) :-
@@ -180,7 +179,7 @@ get_cell(Board, X, Y, Value) :-
     !.
 get_cell(Board, X, Y, Value) :-
     write('Invalid cell!'), nl,
-    get_cell(Board, Player, X, Y, Value).
+    get_cell(Board, X, Y, Value).
 
 is_valid_cell(N, Board, Value, X, Y) :-
     nth0(0, Board, FirstLine),
