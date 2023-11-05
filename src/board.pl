@@ -69,18 +69,21 @@ display_cells_values_line([H|T], PreviousValue) :-
     ((valid_cell(PreviousValue); valid_cell(H)) -> C = '|'; C = ' '),
     write(C),
     write('   '),
+    change_color(H),
     display_cell_value(H),
+    reset_color,
     write('   '),
     display_cells_values_line(T, H).
+
+change_color(b-_) :- write('\e[34m').
+change_color(r-_) :- write('\e[31m').
+change_color(_) :- write('\e[0m').
+reset_color :- write('\e[0m').
 
 % Map board values to characters
 display_cell_value(-1) :- write(' ').
 display_cell_value(0) :- write(' ').
-display_cell_value(r-1) :- put_code(9711). %◯
-display_cell_value(r-3) :- put_code(9651). %△
-display_cell_value(r-4) :- put_code(9723). %◻
-display_cell_value(r-5) :- put_code(11040). %⬠
-display_cell_value(b-1) :- put_code(9679). %●
-display_cell_value(b-3) :- put_code(9650). %▲
-display_cell_value(b-4) :- put_code(9724). %◼
-display_cell_value(b-5) :- put_code(11039). %⬟
+display_cell_value(_-1) :- put_code(9679). %●
+display_cell_value(_-3) :- put_code(9650). %▲
+display_cell_value(_-4) :- put_code(9724). %◼
+display_cell_value(_-5) :- put_code(11039). %⬟
