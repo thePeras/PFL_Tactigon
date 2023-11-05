@@ -76,6 +76,7 @@ win_gold_tiles(r-Board, r) :-
 
 game_over(_-Board, Winner) :-
     win_pentagon_captured(Board, Winner).
+game_over(b-_, _) :- !, fail. % red player can't win by gold tiles in blue's turn
 game_over(Player-Board, Winner) :-
     win_gold_tiles(Player-Board, Winner).
 
@@ -194,13 +195,14 @@ game_cycle(Player-Board, _):-
 
 game_cycle(Player-Board, ChoosedLevels):-
     player_label(Player, PlayerLabel),
-    write('Player '), write(PlayerLabel), write(' turn.'), nl,
+    write('Player '), write(PlayerLabel), write(' turn:'), nl,
     level(Player, ChoosedLevels, Level),
     choose_move(Board, Player, Level, (Xi, Yi, Xf, Yf)),
     move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
     clear,
     clear,
     display_game(NewBoard),
+    write_move(Player, Xi, Yi, Xf, Yf, Board),
     !,
     game_cycle(NewPlayer-NewBoard, ChoosedLevels).    
 
@@ -209,6 +211,20 @@ level(b, _-L, L).
 player_label(r, '1').
 player_label(b, '2').
 
+write_move(Player, Xi, Yi, Xf, Yf, Board) :-
+    get_piece(Xi, Yi, Board, Piece),
+    get_cell_number(Xi, Yi, Board, From),
+    get_cell_number(Xf, Yf, Board, To),
+    player_label(Player, PlayerLabel),
+    write('Player '), write(PlayerLabel), write(' moved '), display_cell_value(Piece), 
+    write(' from '), write(From),
+    write(' to '), write(To), nl.
+
+get_cell_number(X, Y, Board, CellNumber) :-
+    nth0(0, Board, FirstLine),
+    length(FirstLine, LineSize),
+    CellNumber is X * LineSize + Y.
+
 choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
     write('Which piece do you wish to move: '), nl,
     get_cell(Board, Xi, Yi, _),
@@ -216,27 +232,52 @@ choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
     get_cell(Board, Xf, Yf, _).
 
 % random bot
-choose_move(Board, Player, random_bot, (Xi, Yi, Xf, Yf)) :- 
+choose_move(Board, Player, easy_bot, (Xi, Yi, Xf, Yf)) :- 
     valid_moves(Board, Player, Moves),
     length(Moves, Length),
     random(0, Length, Index),
     nth0(Index, Moves, (Xi, Yi, Xf, Yf)).
 
 % greedy bot using the evaluation function and the minimax algorithm
-choose_move(Board, Player, smart_bot, (Xi, Yi, Xf, Yf)) :-
+choose_move(Board, Player, hard_bot, (Xi, Yi, Xf, Yf)) :-
     valid_moves(Board, Player, Moves),
     evaluate_moves(Board, Player, Moves, EvaluatedMoves),
-    sort(EvaluatedMoves, SortedMoves),
-    reverse(SortedMoves, ReverseSortedMoves),
-    nth0(0, ReverseSortedMoves, (_, (Xi, Yi, Xf, Yf))).
+    minimax(EvaluatedMoves, (Xi, Yi, Xf, Yf), _).
 
 evaluate_moves(_, _, [], []).
-evaluate_moves(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [(Value, (Xi, Yi, Xf, Yf)) | EvaluatedMoves]) :-
+evaluate_moves(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [(Eval, (Xi, Yi, Xf, Yf)) | EvaluatedMoves]) :-
     move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
-    evaluate_board(NewPlayer-NewBoard, Value),
+    evaluate_board(NewPlayer-NewBoard, Eval),
     evaluate_moves(Board, Player, Rest, EvaluatedMoves).
 
-%TODO: evaluate_board
+evaluate_board(Player-Board, Eval) :-
+    %win_pentagon_captured(Board, Winner);
+    %win_gold_tiles(Player-Board, Winner),
+    game_over(_-Board, Player),
+    !,
+    Eval is 1000.
+
+evaluate_board(Player-Board, Eval) :-
+    other_player(Player, OtherPlayer),
+    game_over(_-Board, OtherPlayer),
+    !,
+    Eval is -1000.
+
+evaluate_board(Player-Board, Eval) :-
+    valid_moves(Board, Player, Moves),
+    length(Moves, Eval).
+
+minimax([(Eval, Move)], Move, Eval).
+minimax([(Eval, Move) | Rest], BestMove, BestEval) :-
+    minimax(Rest, (Eval2, Move2), _),
+    better_move((Eval, Move), (Eval2, Move2), (BestEval, BestMove)).
+
+better_move((Eval1, Move1), (Eval2, Move2), (Eval1, Move1)) :-
+    Eval1 > Eval2.
+better_move((Eval1, Move1), (Eval2, Move2), (Eval2, Move2)) :-
+    Eval1 =< Eval2.
+
+
 
 
 /*choose_move(GameState, computer-Level, Move) :-

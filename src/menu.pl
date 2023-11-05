@@ -46,12 +46,12 @@ play_menu :- display_menu([
 
 choose_bot_algorithm(Level) :-
     display_menu([
-        "Choose bot algorithm:",
-        "1: Random",
-        "2: Greedy",
+        "Choose bot difficulty:",
+        "1: Easy",
+        "2: Hard",
         "",
         "0: Go back to menu"
-    ], [fail, Level = random_bot, Level = smart_bot, !]).
+    ], [fail, Level = easy_bot, Level = hard_bot, !]).
 
 pvp :- play_game(human-human).
 pvc :- 
