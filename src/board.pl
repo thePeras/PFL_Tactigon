@@ -6,6 +6,7 @@ display_game(Board) :-
     length(Board, Size),
     MediumLine is integer(Size/2), 
     display_game(Board, 0, MediumLine).
+    
 display_game([], _, _).
 display_game([H|T], N, MediumLine) :- % Loop pelas linhas da board
     ((N =< MediumLine) -> (left_space(N), display_medium_line(top, H, '   ', ' ')); true),
@@ -94,3 +95,38 @@ colored_golden_cell(N_Line, I_Cell, LineSize) :-
     Medium is integer(LineSize/2),
     (N_Line =:= 5 -> Medium2 is Medium + 2; Medium2 is Medium),
     (I_Cell =:= Medium2 -> write('\e[33m'); write('\e[0m')).
+
+    
+% mostrar movimentos
+board(initial,[
+        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
+        [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
+        [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
+        [r-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,b-1],
+        [-1,0,r-4,r-3,0,0,0,0,b-3,b-4,0],
+        [-1,-1,r-1,0,r-1,0,0,0,b-1,0,b-1],
+        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
+]).
+
+% mostrar combate
+board(intermediary, [
+        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
+        [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
+        [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
+        [r-1,r-3,r-5,0,r-1,b-4,0,0,b-5,b-3,b-1],
+        [-1,0,r-4,r-3,0,r-4,b-1,0,0,b-4,0],
+        [-1,-1,r-1,0,r-1,0,b-3,0,b-1,0,b-1],
+        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
+]).
+
+% mostrar vitória
+board(final, [
+        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
+        [r-1,0,r-1,0,r-3,0,b-1,0,b-1,-1,-1],
+        [0,r-4,0,0,0,0,0,b-3,b-4,0,-1],
+        [r-1,r-3,r-5,0,r-1,0,b-1,b-4,0,b-3,b-1],
+        [-1,0,r-4,r-3,0,b-5,0,0,b-3,b-4,0],
+        [-1,-1,r-1,0,r-1,r-4,0,0,b-1,0,b-1],
+        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
+]).
+

@@ -26,7 +26,6 @@ replace_board_value([Row|T], X, Y, Value, [Row|NewT]):-
     replace_board_value(T, NewX, Y, Value, NewT).
 
 
-
 write_str_times(_, -1) :- !.
 write_str_times(_, 0).
 write_str_times(Str, N) :- 

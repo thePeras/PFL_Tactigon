@@ -13,7 +13,7 @@ menu :- repeat, clear, display_logo, display_menu([
     "3: Exit"
 ], [!, play_menu, instructions_menu, !]).
 
-instructions_menu :- clear, display_menu([
+instructions_menu :- clear, display_logo, display_menu([
     "\e[1mTactigon\e[0m",
     "A fast-paced board game where strategy meets geometry",
     "",
@@ -48,7 +48,7 @@ instructions_menu :- clear, display_menu([
     "0: Go back to menu"
 ], [fail]).
 
-play_menu :- clear, display_menu([
+play_menu :- clear, display_logo, display_menu([
     "Choose game mode:",
     "1: Player vs Player",
     "2: Player vs Computer",
@@ -57,8 +57,9 @@ play_menu :- clear, display_menu([
     "0: Go back to menu"
 ], [fail, pvp, pvc, cvc, !, !]).
 
-choose_bot_algorithm(Level) :- clear, display_menu([
-        "Choose bot difficulty:",
+choose_bot_algorithm(Level, BotPlayer) :- clear, display_logo,
+    write('Select computer '), write(BotPlayer), write('\'s level: '), nl,
+    display_menu([
         "1: Easy",
         "2: Hard",
         "",
@@ -69,9 +70,9 @@ pvp :- play_game(human-human).
 pvc :- 
     choose_bot_algorithm(Level),
     play_game(human-Level).
-cvc :- 
-    choose_bot_algorithm(Bot1Level),
-    choose_bot_algorithm(Bot2Level),
+cvc :-
+    choose_bot_algorithm(Bot1Level, '1'),
+    choose_bot_algorithm(Bot2Level, '2'),
     play_game(Bot1Level-Bot2Level).
 
 

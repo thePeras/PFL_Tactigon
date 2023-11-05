@@ -1,19 +1,11 @@
 play_game(ChosenLevels) :-
     clear,
     initial_state(Board),
-    display_game(Board), % I think we should display the board here
+    display_game(Board),
     game_cycle(r-Board, ChosenLevels).
 
 initial_state(Board) :-
-    Board = [
-        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
-        [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
-        [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
-        [r-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,b-1],
-        [-1,0,r-4,r-3,0,0,0,0,b-3,b-4,0],
-        [-1,-1,r-1,0,r-1,0,0,0,b-1,0,b-1],
-        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
-    ].
+    board(initial, Board).
 
 get_piece(X, Y, Board, Piece) :-
     nth0(X, Board, Row),
@@ -240,9 +232,8 @@ choose_move(Board, Player, human, Move):-
 % random bot
 choose_move(Board, Player, easy_bot, (Xi, Yi, Xf, Yf)) :- 
     valid_moves(Board, Player, Moves),
-    length(Moves, Length),
-    random(0, Length, Index),
-    nth0(Index, Moves, (Xi, Yi, Xf, Yf)).
+    random_member((Xi, Yi, Xf, Yf), Moves),
+    wait_for_enter.
 
 % greedy bot using the evaluation function and the minimax algorithm
 choose_move(Board, Player, hard_bot, (Xi, Yi, Xf, Yf)) :-
