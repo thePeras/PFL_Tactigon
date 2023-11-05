@@ -25,8 +25,8 @@ replace_board_value([Row|T], X, Y, Value, [Row|NewT]):-
     NewX is X - 1,
     replace_board_value(T, NewX, Y, Value, NewT).
 
-
-
+% write_str_times(+Str, +N)
+% Writes the string Str N times
 write_str_times(_, -1) :- !.
 write_str_times(_, 0).
 write_str_times(Str, N) :- 
@@ -34,20 +34,30 @@ write_str_times(Str, N) :-
     N1 is N - 1, 
     write_str_times(Str, N1).
 
+% write_str(+Str)
+% Writes the string Str
 write_str("").
 write_str([Code | T]) :- char_code(Char, Code), write(Char), write_str(T).
 
+% write_lines(+Lines)
+% Writes the list of strings Lines
 write_lines([]).
 write_lines([H|T]) :- write_str(H), nl, write_lines(T).
 
+% clear/0
+% Clears the screen
 clear :- write_str("\e[2J").
 
+% read_number_until(+Prompt, +Condition, -Out)
+% Reads a number from the user until the condition is met
 read_number_until(Prompt, Condition, Out) :-
     repeat,
     write(Prompt),
     read_number(Out),
     call(Condition, Out), !.
 
+% read_number(+Out)
+% Reads a number from the user
 read_number(X) :- read_number(0, X).
 read_number(X, X) :- 
     peek_code(10), 
@@ -59,9 +69,8 @@ read_number(Curr, Out) :-
     NewCurr is Curr * 10 + (C - 48),
     read_number(NewCurr, Out).
 
-read_number(_, _):-
-    skip_line, !, fail.
-
+% wait_for_enter/0
+% Waits for the user to press enter
 wait_for_enter :-
     write('Press Enter to continue'), nl,
     get_char(_).

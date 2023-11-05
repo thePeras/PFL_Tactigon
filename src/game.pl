@@ -1,9 +1,13 @@
+% play_game(+ChosenLevels)
+% Predicate that starts the game with the chosen levels
 play_game(ChosenLevels) :-
     clear,
     initial_state(Board),
     display_game(Board), % I think we should display the board here
     game_cycle(r-Board, ChosenLevels).
 
+% initial_state(-Board)
+% Predicate that returns the initial state of the board
 initial_state(Board) :-
     Board = [
         [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
@@ -15,20 +19,27 @@ initial_state(Board) :-
         [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
     ].
 
+% get_piece(+X, +Y, +Board, -Piece)
+% Predicate that returns the piece in the position (X,Y) of the board
 get_piece(X, Y, Board, Piece) :-
     nth0(X, Board, Row),
     nth0(Y, Row, Piece).
 
+% valid_position(+X, +Y, +Board, -Piece)
+% Predicate that checks if the position (X,Y) is valid and returns the piece in that position
 valid_position(X, Y, Board, Piece) :-
     get_piece(X,Y, Board, Piece),
     Piece \= -1.
 
+% valid_piece(+X, +Y, +Board, -Piece)
+% Predicate that checks if the position (X,Y) is valid and if it is a piece of the player, returning the piece.
 valid_piece(X, Y, Board, Player-Piece) :-
     valid_position(X, Y, Board, Player-Piece),
     nth0(X, Board, Row),
     nth0(Y, Row, Player-Piece).
 
 % valid_moves(+Board, +Player, -Moves)
+% Predicate that returns all the valid moves of the player
 valid_moves(Board, Player, ListOfMoves) :-
     findall((Xi,Yi,Xf,Yf), (
         valid_piece(Xi, Yi, Board, Player-Piece),
@@ -51,7 +62,8 @@ implement_move((Xi, Yi, Xf, Yf), Board, NewPiece, NewBoard):-
     replace_board_value(Board, Xi, Yi, 0, AuxBoard),
     replace_board_value(AuxBoard, Xf, Yf, NewPiece, NewBoard).
 
-% change_player(?Player, ?OtherPlayer)
+% change_player(+Player, -NewPlayer)
+% Predicate that changes to the next player
 change_player(r, b).
 change_player(b, r).
 
@@ -166,9 +178,8 @@ select_cell(Board, Player, X, Y,Value) :-
     write('Invalid cell!'), nl,
     select_cell(Board, Player, X, Y,Value).
     
-/* 
-Asks the user for a cell number and returns the coordinates and value of the cell
-get_cell(+Board, -X, -Y, -Value) */
+% get_cell(+Board, -X, -Y, -Value)
+% Asks the user for a cell number and returns the coordinates and value of the cell
 get_cell(Board, X, Y, Value) :- 
     read_number(N),
     is_valid_cell(N, Board, Value, X, Y), 
@@ -177,6 +188,8 @@ get_cell(Board, X, Y, Value) :-
     write('Invalid!'), nl,
     get_cell(Board, X, Y, Value).
 
+% is_valid_cell(+N, +Board, -Value, -X, -Y)
+% Checks if the cell number N is valid and returns the coordinates and value of the cell
 is_valid_cell(N, Board, Value, X, Y) :-
     nth0(0, Board, FirstLine),
     length(FirstLine, LineSize),
@@ -186,17 +199,20 @@ is_valid_cell(N, Board, Value, X, Y) :-
     nth0(Y, Line, Value),
     Value \= -1.
 
+% display_game(+Board)
+% Displays the winner of the game
 display_winner(Winner):-
     write('Game Over!'), nl,
     player_label(Winner, WinnerLabel),    
     write(WinnerLabel), write(' player'), write(' won!'), nl,
     wait_for_enter.
 
+% game_cycle(+Player-+Board, +ChosenLevels)
+% Predicate that cycles the game until it is over
 game_cycle(Player-Board, _):-
     game_over(Player-Board, Winner), !,
     display_winner(Winner),
     menu.
-
 game_cycle(Player-Board, ChosenLevels):-
     player_label(Player, PlayerLabel),
     write(PlayerLabel), write(' Player\'s'), write(' turn.'), nl,
@@ -209,11 +225,18 @@ game_cycle(Player-Board, ChosenLevels):-
     !,
     game_cycle(NewPlayer-NewBoard, ChosenLevels).    
 
+% level(+Player, +ChosenLevels, -Level)
+% Returns the level of the player (human, easy_bot or hard_bot)
 level(r, L-_, L).
 level(b, _-L, L).
+
+% player_label(+Player, -PlayerLabel)
+% Returns the label of the player
 player_label(r, 'Red').
 player_label(b, 'Blue').
 
+% write_move(+Player, +Xi, +Yi, +Xf, +Yf, +Board)
+% Writes the move made by the player
 write_move(Player, Xi, Yi, Xf, Yf, Board) :-
     get_piece(Xi, Yi, Board, Piece),
     get_cell_number(Xi, Yi, Board, From),
@@ -223,11 +246,15 @@ write_move(Player, Xi, Yi, Xf, Yf, Board) :-
     write(' from '), write(From),
     write(' to '), write(To), nl.
 
+% get_cell_number(+X, +Y, +Board, -CellNumber)
+% Returns the cell number of the cell (X,Y)
 get_cell_number(X, Y, Board, CellNumber) :-
     nth0(0, Board, FirstLine),
     length(FirstLine, LineSize),
     CellNumber is X * LineSize + Y.
 
+% choose_move(+Board, +Player, +Level, -Move)
+% Asks the user for a move and returns it
 choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
     select_cell(Board, Player, Xi, Yi,_),
     write('Where do you want to move it?'), nl,
