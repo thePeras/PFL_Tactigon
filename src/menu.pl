@@ -15,10 +15,23 @@ menu :- repeat, display_menu([
 ], [!, play_menu, instructions_menu, !]).
 
 instructions_menu :- display_menu([
-    "Instructions",
+    "\e[1mTactigon\e[0m",
+    "A fast-paced board game where strategy meets geometry",
     "",
-    "Tactigon...",
+    "\e[1mHow to win \e[0m",
+    "There are 2 ways to win:",
+    "- Capturing the opponent pentagon.",
+    "- Occupy both gold tiles, the yellow spaces.",
     "",
+    "\e[1mPieces and Movement \e[0m",
+    "There are 4 types of pieces that can move in any direction:",
+    " - Circles, can move 1 space.",
+    " - Triangles, can move up to 3 spaces",
+    " - Squares, can move up to 2 spaces.",
+    " - Pentagons, can move up to 4 spaces.",
+    "",
+    "\e[1mCombat \e[0m",
+    "TODO",
     "0: Go back to menu"
 ], [fail]).
 
