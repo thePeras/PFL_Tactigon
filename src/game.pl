@@ -1,5 +1,3 @@
-:- use_module(library(lists)).
-
 play_game(RedPlayer-BluePlayer) :-
     clear,
     initial_state(Board),
@@ -8,7 +6,7 @@ play_game(RedPlayer-BluePlayer) :-
     blue_turn
     */
     display_game(Board),
-    game_cycle(RedPlayer-BluePlayer, State, Board).
+    game_cycle(r-Board, RedPlayer-BluePlayer).
     /*
         bot random
         bot greedy
@@ -38,24 +36,38 @@ valid_piece(X, Y, Board, Player-Piece) :-
     nth0(X, Board, Row),
     nth0(Y, Row, Player-Piece).
 
-game_cycle(RedPlayer-BluePlayer, State, Board) :-
-    game_over(GameState-Player, Winner),
-    !,
-    congratulate(Winner).
+% valid_moves(+Board, +Player, -Moves)
+valid_moves(Board, Player, ListOfMoves) :-
+    findall((Xi,Yi,Xf,Yf), (
+        valid_piece(Xi, Yi, Board, Player-Piece),
+        bfs((Xi,Yi), Piece, Player, Board, Moves),
+        member((Xf,Yf), Moves)
+    ), ListOfMoves).
 
-game_cycle(RedPlayer-BluePlayer, State, Board) :-
-    choose_move(GameState, Player, Move),
-    move(GameState, Move, NewGameState),
-    next_player(Player, NextPlayer),
-    display_game(NewGameState-NextPlayer),
-    !,
-    game_cycle(NewGameState-NextPlayer).
+
+
+move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard) :- 
+    other_player(Player, NewPlayer),
+    valid_piece(Xi, Yi, Board, Player-Attacker),
+    bfs((Xi,Yi), Attacker, Player, Board, Moves),
+    memberchk((Xf,Yf), Moves),
+    get_piece(Xf, Yf, Board, Piece),
+    combat(Player-Attacker, Piece, ResultingPiece),
+    implement_move((Xi, Yi, Xf, Yf), Board, ResultingPiece, NewBoard).
+
+implement_move((Xi, Yi, Xf, Yf), Board, NewPiece, NewBoard):-
+    replace_board_value(Board, Xi, Yi, 0, AuxBoard),
+    replace_board_value(AuxBoard, Xf, Yf, NewPiece, NewBoard).
+
+% other_player(?Player, ?OtherPlayer)
+other_player(r, b).
+other_player(b, r).
 
 
 captured(_, []).
 captured(Piece, [Row | Rest]) :-
     \+ memberchk(Piece, Row),
-    eaten(Piece, Rest).
+    captured(Piece, Rest).
 
 win_pentagon_captured(Board, b) :-
     captured(r-5, Board).
@@ -76,11 +88,8 @@ game_over(Player-Board, Winner) :-
     win_gold_tiles(Player-Board, Winner).
 
 combat(Player-_, Player-_, _) :-
-    write('You can\'t attack your own pieces!'), nl,
-    fail.
-combat(Player, 0, Player) :-
-    write('You can\'t attack an empty tile!'), nl,
-    fail.
+    !, fail.
+combat(Player, 0, Player).
 
 combat(Player1-AttackerPiece, Player2-AttackedPiece, Player1-AttackerPiece) :-
     AttackerPiece =< AttackedPiece,
@@ -89,7 +98,7 @@ combat(Player1-AttackerPiece, Player2-AttackedPiece, Player1-AttackerPiece) :-
 combat(_-3, _-1, 0).
 combat(_-4, _-3, 0).
 
-neighboursOffSet([(0, -1), (0, 1), (-1, 1), (-1, 0), (1, 1), (1, 0)]).
+neighboursOffSet([(0, -1), (0, 1), (-1, -1), (-1, 0), (1, 1), (1, 0)]).
 get_neighbours(Xi, Yi, Player-Piece, Board, Neighbours) :-
     neighboursOffSet(OffSet),
     get_neighbours(Xi, Yi, Player-Piece, Board, OffSet, Neighbours).
@@ -108,7 +117,7 @@ get_neighbours(Xi, Yi, Player-Piece, Board, [(_, _) | Rest], OtherNeighbours) :-
 
 % filter_moves(+AttackerPiece, +Moves, +Board, -PossibleMoves)
 filter_moves(_, [], _, []).
-filter_moves(Player-Piece, [(X, Y | Rest)], Board, [(X, Y) | FilteredMoves]) :- % valid move added to queue 
+filter_moves(Player-Piece, [(X, Y) | Rest], Board, [(X, Y) | FilteredMoves]) :- % valid move added to queue 
     get_piece(X, Y, Board, Value),
     combat(Player-Piece, Value, _),
     !,
@@ -119,19 +128,43 @@ filter_moves(Player-Piece, [(_,_) | Rest], Board, FilteredMoves):-
 
 % create tuple with position and distance
 add_distance([],_,[]).
-add_distance(Moves, Distance, MovesWithDistance) :-
-    add_distance([(X,Y) | Rest], Distance, [(X,Y,Distance) | RestDist]),
+add_distance([(X,Y)| Rest], Distance, [(X,Y,Distance) | RestDist]) :-
     add_distance(Rest, Distance, RestDist).
 
+% empty_positions(+Board, +Moves, -EmptyPositions)
+empty_positions(_, [], []).
+empty_positions(Board, [(X,Y) | Rest], [(X,Y) | OtherEmptyPositions]) :-
+    get_piece(X, Y, Board, 0),
+    !,
+    empty_positions(Board, Rest, OtherEmptyPositions).
+empty_positions(Board, [(_,_) | Rest], EmptyPositions) :-
+    empty_positions(Board, Rest, EmptyPositions). 
 
-bfs_moves(_,_,_,_,[],_,[]). % no more moves
-bfs_moves(_,_,_,MaxMoves, [(_,_,MaxMoves) | _], _, []) :- !. % max Moves reached
-bfs_moves(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, ListOfMoves) :- 
+bfs((Xi, Yi), Piece, Player, Board, Moves) :-  
+    MaxMoves is Piece,
+    bfs(Piece, Player, Board, MaxMoves, [(Xi, Yi, 0)], [(Xi,Yi)], Moves).
+
+bfs(_,_,_,_,[],_,[]). % no more moves
+bfs(_,_,_,MaxMoves, [(_,_,MaxMoves) | _], _, []) :- !. % max moves reached
+bfs(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, Moves) :- 
     Distance < MaxMoves,
     NewDistance is Distance + 1,
     get_neighbours(X, Y, Player-Piece, Board, AllMoves), % includes invalid moves
     filter_moves(Player-Piece, AllMoves, Board, ValidMoves),
     memberchk_list(ValidMoves, Visited, UnVisitedMoves),
+
+    empty_positions(Board, UnVisitedMoves, EmptyPositionsMoves),   % get moves to empty spaces
+    
+    add_distance(EmptyPositionsMoves, NewDistance, EmptyPositionsMovesDist),  % X-Y to X-Y-NewDist
+
+    append(UnVisitedMoves, RecursiveMoves, Moves),    % RestMoves is the recursive result
+    append(UnVisitedMoves, Visited, UpdatedVisited),
+    append(Rest, EmptyPositionsMovesDist, UpdatedRest),
+
+    bfs(Piece, Player, Board, MaxMoves, UpdatedRest, UpdatedVisited, RecursiveMoves).
+
+
+
 
 
 
@@ -142,10 +175,12 @@ bfs_moves(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, List
 Asks the user for a cell number and returns the coordinates and value of the cell
 get_cell(+Board, -X, -Y, -Value) */
 get_cell(Board, X, Y, Value) :- 
-    repeat,
-    write('Enter cell number: '),
     read_number(N),
-    is_valid_cell(N, Board, Value, X, Y), !.
+    is_valid_cell(N, Board, Value, X, Y), 
+    !.
+get_cell(Board, X, Y, Value) :-
+    write('Invalid cell!'), nl,
+    get_cell(Board, Player, X, Y, Value).
 
 is_valid_cell(N, Board, Value, X, Y) :-
     nth0(0, Board, FirstLine),
@@ -156,11 +191,48 @@ is_valid_cell(N, Board, Value, X, Y) :-
     nth0(Y, Line, Value),
     Value \= -1.
 
-/*
-choose_move(GameState, human, Move) :-
-    write('Choose a move: '), nl.
 
-choose_move(GameState, computer-Level, Move) :-
+congratulate(r):-
+    write('Player 1 won!'), nl,
+    press_enter('Press Enter to continue'),
+    !, fail.
+
+congratulate(b):-
+    write('Player 2 won!'), nl,
+    press_enter('Press Enter to continue'),
+    !, fail.
+
+game_cycle(Player-Board,_):-
+    game_over(Player-Board, Winner), !,
+    congratulate(Winner).
+
+game_cycle(Player-Board, LevelsFromMenu):-
+    player_label(Player, PlayerLabel),
+    write('Player '), write(PlayerLabel), write(' turn.'), nl,
+    
+    level(Player, LevelsFromMenu, Level),
+    choose_move(Board, Player, Level, (Xi, Yi, Xf, Yf)),
+    move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
+    clear,
+    clear,
+    display_game(NewBoard),
+    !,
+    game_cycle(NewPlayer-NewBoard, LevelsFromMenu).    
+
+
+choose_move(Board, Player, 0, (Xi, Yi, Xf, Yf)) :-
+    write('Which piece do you wish to move: '), nl,
+    get_cell(Board, Xi, Yi, _),
+    write('Select a position to move to: '), nl,
+    get_cell(Board, Xf, Yf, _).
+
+
+level(r, L-_, L).
+level(b, _-L, L).
+player_label(r, '1').
+player_label(b, '2').
+
+/*choose_move(GameState, computer-Level, Move) :-
     valid_moves(GameState, Moves),
     choose_move(Level, GameState, Moves, Move).
 
@@ -231,17 +303,5 @@ validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter),
     nth0(X, Board, Row),
     nth0(Y, Row, Piece),
     Counter1 is Counter - 1,
-    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter1),
-
-is_occuppied(X, Y, Board) :-
-    nth0(X, Board, Row),
-    nth0(Y, Row, Piece),
-    Piece \= 0.
-
-is_piece_from_player(blue_turn, Piece) :-
-    Piece > 5,
-    Piece < 11.
-is_piece_from_player(State, Piece) :-
-    Piece > 0,
-    Piece < 6.
+    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter1).
 */
