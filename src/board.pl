@@ -49,9 +49,10 @@ display_cells_name_line([], PreviousValue, _,  _, _) :-
 display_cells_name_line([H|T], PreviousValue, N_Line, I_Cell, LineSize) :-
     ((valid_cell(PreviousValue); valid_cell(H)) -> C = '|'; C = ' '),
     write(C),
+    colored_golden_cell(N_Line, I_Cell, LineSize),
     write('   '),
     display_cell_name(H, N_Line, I_Cell, LineSize),
-    write('  '),
+    write('  \e[0m'),
     New_I_Cell is I_Cell + 1,
     display_cells_name_line(T, H, N_Line, New_I_Cell, LineSize).
 
@@ -87,3 +88,9 @@ display_cell_value(_-1) :- put_code(9679). %●
 display_cell_value(_-3) :- put_code(9650). %▲
 display_cell_value(_-4) :- put_code(9724). %◼
 display_cell_value(_-5) :- put_code(11039). %⬟
+
+colored_golden_cell(N_Line, I_Cell, LineSize) :-
+    (N_Line =\= 1, N_Line =\= 5) -> true;
+    Medium is integer(LineSize/2),
+    (N_Line =:= 5 -> Medium2 is Medium + 2; Medium2 is Medium),
+    (I_Cell =:= Medium2 -> write('\e[33m'); write('\e[0m')).
