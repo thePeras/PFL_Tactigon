@@ -59,3 +59,7 @@ read_number(Curr, Out) :-
     C =< 57,
     NewCurr is Curr * 10 + (C - 48),
     read_number(NewCurr, Out).
+
+wait_for_enter() :-
+    write('Press Enter to continue'), nl,
+    get_char(_).

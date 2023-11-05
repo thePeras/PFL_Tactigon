@@ -190,15 +190,10 @@ is_valid_cell(N, Board, Value, X, Y) :-
     nth0(Y, Line, Value),
     Value \= -1.
 
-
-congratulate(r):-
-    write('Player 1 won!'), nl,
-    press_enter('Press Enter to continue'),
-    !, fail.
-
-congratulate(b):-
-    write('Player 2 won!'), nl,
-    press_enter('Press Enter to continue'),
+congratulate(Winner):-
+    write('Game Over!'), nl,    
+    write('Player '), write(Winner), write(' won!'), nl,
+    wait_for_enter,
     !, fail.
 
 game_cycle(Player-Board,_):-
