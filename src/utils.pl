@@ -5,7 +5,6 @@ memberchk_list([X|T], Y, R) :-
 memberchk_list([X|T], Y, [X|R]) :-
     memberchk_list(T, Y, R).
 
-
 % Helper function to replace an element at a specific position in a list
 % replace_element(+List, +Column, +Value, -NewList)
 replace_element([], _, _, []).
@@ -59,6 +58,9 @@ read_number(Curr, Out) :-
     C =< 57,
     NewCurr is Curr * 10 + (C - 48),
     read_number(NewCurr, Out).
+
+read_number(_, _):-
+    skip_line, !, fail.
 
 wait_for_enter :-
     write('Press Enter to continue'), nl,

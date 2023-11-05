@@ -51,7 +51,7 @@ choose_bot_algorithm(Level) :-
         "2: Hard",
         "",
         "0: Go back to menu"
-    ], [fail, Level = easy_bot, Level = hard_bot, !]).
+    ], [fail, Level = easy_bot, Level = hard_bot, !, !]).
 
 pvp :- play_game(human-human).
 pvc :- 
