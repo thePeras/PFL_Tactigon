@@ -1,16 +1,8 @@
-play_game(RedPlayer-BluePlayer) :-
+play_game(ChoosedLevels) :-
     clear,
     initial_state(Board),
-    /*
-    init_
-    blue_turn
-    */
-    display_game(Board),
-    game_cycle(r-Board, RedPlayer-BluePlayer).
-    /*
-        bot random
-        bot greedy
-    */
+    display_game(Board), % I think we should display the board here
+    game_cycle(r-Board, ChoosedLevels).
 
 initial_state(Board) :-
     Board = [
@@ -193,38 +185,59 @@ is_valid_cell(N, Board, Value, X, Y) :-
 congratulate(Winner):-
     write('Game Over!'), nl,    
     write('Player '), write(Winner), write(' won!'), nl,
-    wait_for_enter,
-    !, fail.
+    wait_for_enter.
 
-game_cycle(Player-Board,_):-
+game_cycle(Player-Board, _):-
     game_over(Player-Board, Winner), !,
-    congratulate(Winner).
+    congratulate(Winner),
+    menu.
 
-game_cycle(Player-Board, LevelsFromMenu):-
+game_cycle(Player-Board, ChoosedLevels):-
     player_label(Player, PlayerLabel),
     write('Player '), write(PlayerLabel), write(' turn.'), nl,
-    
-    level(Player, LevelsFromMenu, Level),
+    level(Player, ChoosedLevels, Level),
     choose_move(Board, Player, Level, (Xi, Yi, Xf, Yf)),
     move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
     clear,
     clear,
     display_game(NewBoard),
     !,
-    game_cycle(NewPlayer-NewBoard, LevelsFromMenu).    
-
-
-choose_move(Board, Player, 0, (Xi, Yi, Xf, Yf)) :-
-    write('Which piece do you wish to move: '), nl,
-    get_cell(Board, Xi, Yi, _),
-    write('Select a position to move to: '), nl,
-    get_cell(Board, Xf, Yf, _).
-
+    game_cycle(NewPlayer-NewBoard, ChoosedLevels).    
 
 level(r, L-_, L).
 level(b, _-L, L).
 player_label(r, '1').
 player_label(b, '2').
+
+choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
+    write('Which piece do you wish to move: '), nl,
+    get_cell(Board, Xi, Yi, _),
+    write('Select a position to move to: '), nl,
+    get_cell(Board, Xf, Yf, _).
+
+% random bot
+choose_move(Board, Player, random_bot, (Xi, Yi, Xf, Yf)) :- 
+    valid_moves(Board, Player, Moves),
+    length(Moves, Length),
+    random(0, Length, Index),
+    nth0(Index, Moves, (Xi, Yi, Xf, Yf)).
+
+% greedy bot using the evaluation function and the minimax algorithm
+choose_move(Board, Player, smart_bot, (Xi, Yi, Xf, Yf)) :-
+    valid_moves(Board, Player, Moves),
+    evaluate_moves(Board, Player, Moves, EvaluatedMoves),
+    sort(EvaluatedMoves, SortedMoves),
+    reverse(SortedMoves, ReverseSortedMoves),
+    nth0(0, ReverseSortedMoves, (_, (Xi, Yi, Xf, Yf))).
+
+evaluate_moves(_, _, [], []).
+evaluate_moves(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [(Value, (Xi, Yi, Xf, Yf)) | EvaluatedMoves]) :-
+    move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
+    evaluate_board(NewPlayer-NewBoard, Value),
+    evaluate_moves(Board, Player, Rest, EvaluatedMoves).
+
+%TODO: evaluate_board
+
 
 /*choose_move(GameState, computer-Level, Move) :-
     valid_moves(GameState, Moves),

@@ -60,6 +60,6 @@ read_number(Curr, Out) :-
     NewCurr is Curr * 10 + (C - 48),
     read_number(NewCurr, Out).
 
-wait_for_enter() :-
+wait_for_enter :-
     write('Press Enter to continue'), nl,
     get_char(_).

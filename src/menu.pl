@@ -31,6 +31,20 @@ play_menu :- display_menu([
     "0: Go back to menu"
 ], [fail, pvp, pvc, cvc, !, !]).
 
-pvp :- play_game(0-0).
-pvc :- play_game(0-1).
-cvc :- play_game(1-1).
+choose_bot_algorithm(Level) :-
+    display_menu([
+        "Choose bot algorithm:",
+        "1: Random",
+        "2: Greedy",
+        "",
+        "0: Go back to menu"
+    ], [fail, Level = random_bot, Level = smart_bot, !]).
+
+pvp :- play_game(human-human).
+pvc :- 
+    choose_bot_algorithm(Level),
+    play_game(human-Level).
+cvc :- 
+    choose_bot_algorithm(Bot1Level),
+    choose_bot_algorithm(Bot2Level),
+    play_game(Bot1Level-Bot2Level).
