@@ -43,7 +43,6 @@ select_cell(Board, Player, X, Y,Value) :-
     get_cell(Board, X, Y, Value),
     valid_piece(X, Y, Board, Player-_),
     !.
-
 select_cell(Board, Player, X, Y,Value) :-
     write('Invalid cell!'), nl,
     select_cell(Board, Player, X, Y,Value).
@@ -59,7 +58,7 @@ get_cell(Board, X, Y, Value) :-
     get_cell(Board, X, Y, Value).
 
 % is_valid_cell(+N, +Board, -Value, -X, -Y)
-% Checks if the cell number N is valid in Board and returns the value and coordinates of the cell
+% Checks if the cell number N is valid in Board and returns the value and coordinates of the cell piece
 is_valid_cell(N, Board, Value, X, Y) :-
     nth0(0, Board, FirstLine),
     length(FirstLine, LineSize),
@@ -228,7 +227,7 @@ choose_move(Board, Player, human, Move):-
     write('Invalid move! Try again.'), nl,
     choose_move(Board, Player, human, Move).
 
-% Chooses a new move for the easy AI to perform.
+% Chooses a new move for the easy bot to perform.
 choose_move(Board, Player, easy_bot, (Xi, Yi, Xf, Yf)) :- 
     random_move(Board, Player, (Xi, Yi, Xf, Yf)),
     wait_for_enter.

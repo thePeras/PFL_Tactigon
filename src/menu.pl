@@ -84,7 +84,7 @@ pvp :- play_game(human-human).
 % pvc/0
 % Starts a player vs computer game and allows the player to choose the bot difficulty.
 pvc :- 
-    choose_bot_algorithm(Level),
+    choose_bot_algorithm(Level, '1'),
     play_game(human-Level).
 
 % cvc/0

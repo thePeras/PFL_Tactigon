@@ -23,7 +23,6 @@ best_move(Board, Player, Moves, GreedyMove) :-
 
 % evaluate(+Board, +Player, +Moves, -Values)
 % Evaluates the given moves and returns a list of values.
-
 evaluate(_, _, [], []). % base case
 evaluate(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [Value | RestValues]) :-
     move(Player-Board, (Xi, Yi, Xf, Yf), _-NewBoard),
