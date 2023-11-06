@@ -1,101 +1,61 @@
-% play_game(+ChosenLevels)
-% Predicate that starts the game with the chosen levels
-play_game(ChosenLevels) :-
+:- use_module(library(lists)).
+
+play_game(RedPlayer-BluePlayer) :-
     clear,
     initial_state(Board),
-    display_game(Board), % I think we should display the board here
-    game_cycle(r-Board, ChosenLevels).
+    /*
+    init_
+    blue_turn
+    */
+    display_game(Board),
+    game_cycle(RedPlayer-BluePlayer, State, Board).
+    /*
+        bot random
+        bot greedy
+    */
 
-% initial_state(-Board)
-% Predicate that returns the initial state of the board
 initial_state(Board) :-
-    display_menu([
-        "Choose the board size:",
-        "1. Extreme Small", 
-        "2. Small", 
-        "3. Normal"
-    ], [fail,
-        Board = [
-            [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
-            [-1,-1,-1,0,0,0,-1,-1,-1,-1,-1],
-            [-1,-1,r-3,0,0,0,0,b-3,-1,-1,-1],
-            [-1,-1,r-5,r-4,r-1,0,b-1,b-4,b-5,-1,-1],
-            [-1,-1,-1,r-3,0,0,0,0,b-3,-1,-1],
-            [-1,-1,-1,-1,-1,0,0,0,-1,-1,-1],
-            [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
-        ],
-        Board = [
-            [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
-            [-1,0,r-1,0,0,0,b-1,0,-1,-1,-1],
-            [-1,r-4,r-3,0,0,0,0,b-3,b-4,-1,-1],
-            [-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,-1],
-            [-1,-1,r-4,r-3,0,0,0,0,b-3,b-4,-1],
-            [-1,-1,-1,0,r-1,0,0,0,b-1,0,-1],
-            [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
-        ],
-        Board = [
-            [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
-            [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
-            [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
-            [r-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,b-1],
-            [-1,0,r-4,r-3,0,0,0,0,b-3,b-4,0],
-            [-1,-1,r-1,0,r-1,0,0,0,b-1,0,b-1],
-            [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
-        ]]).   
+    Board = [
+        [-1,-1,-1,0,0,-1,-1,-1,-1,-1,-1],
+        [r-1,0,r-1,0,0,0,b-1,0,b-1,-1,-1],
+        [0,r-4,r-3,0,0,0,0,b-3,b-4,0,-1],
+        [r-1,r-3,r-5,r-4,r-1,0,b-1,b-4,b-5,b-3,b-1],
+        [-1,0,r-4,r-3,0,0,0,0,b-3,b-4,0],
+        [-1,-1,r-1,0,r-1,0,0,0,b-1,0,b-1],
+        [-1,-1,-1,-1,-1,-1,0,0,-1,-1,-1]
+    ].
 
-% get_piece(+X, +Y, +Board, -Piece)
-% Predicate that returns the piece in the position (X,Y) of the board
 get_piece(X, Y, Board, Piece) :-
     nth0(X, Board, Row),
     nth0(Y, Row, Piece).
 
-% valid_position(+X, +Y, +Board, -Piece)
-% Predicate that checks if the position (X,Y) is valid and returns the piece in that position
 valid_position(X, Y, Board, Piece) :-
     get_piece(X,Y, Board, Piece),
     Piece \= -1.
 
-% valid_piece(+X, +Y, +Board, -Piece)
-% Predicate that checks if the position (X,Y) is valid and if it is a piece of the player, returning the piece.
 valid_piece(X, Y, Board, Player-Piece) :-
     valid_position(X, Y, Board, Player-Piece),
     nth0(X, Board, Row),
     nth0(Y, Row, Player-Piece).
 
-% valid_moves(+Board, +Player, -Moves)
-% Predicate that returns all the valid moves of the player
-valid_moves(Board, Player, ListOfMoves) :-
-    findall((Xi,Yi,Xf,Yf), (
-        valid_piece(Xi, Yi, Board, Player-Piece),
-        bfs((Xi,Yi), Piece, Player, Board, Moves),
-        member((Xf,Yf), Moves)
-    ), ListOfMoves).
+game_cycle(RedPlayer-BluePlayer, State, Board) :-
+    game_over(GameState-Player, Winner),
+    !,
+    congratulate(Winner).
 
-
-
-move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard) :- 
-    change_player(Player, NewPlayer),
-    valid_piece(Xi, Yi, Board, Player-Attacker),
-    bfs((Xi,Yi), Attacker, Player, Board, Moves),
-    memberchk((Xf,Yf), Moves),
-    get_piece(Xf, Yf, Board, Piece),
-    combat(Player-Attacker, Piece, ResultingPiece),
-    implement_move((Xi, Yi, Xf, Yf), Board, ResultingPiece, NewBoard).
-
-implement_move((Xi, Yi, Xf, Yf), Board, NewPiece, NewBoard):-
-    replace_board_value(Board, Xi, Yi, 0, AuxBoard),
-    replace_board_value(AuxBoard, Xf, Yf, NewPiece, NewBoard).
-
-% change_player(+Player, -NewPlayer)
-% Predicate that changes to the next player
-change_player(r, b).
-change_player(b, r).
+game_cycle(RedPlayer-BluePlayer, State, Board) :-
+    choose_move(GameState, Player, Move),
+    move(GameState, Move, NewGameState),
+    next_player(Player, NextPlayer),
+    display_game(NewGameState-NextPlayer),
+    !,
+    game_cycle(NewGameState-NextPlayer).
 
 
 captured(_, []).
 captured(Piece, [Row | Rest]) :-
     \+ memberchk(Piece, Row),
-    captured(Piece, Rest).
+    eaten(Piece, Rest).
 
 win_pentagon_captured(Board, b) :-
     captured(r-5, Board).
@@ -112,21 +72,24 @@ win_gold_tiles(r-Board, r) :-
 
 game_over(_-Board, Winner) :-
     win_pentagon_captured(Board, Winner).
-game_over(b-_, _) :- !, fail. % red player can't win by gold tiles in blue's turn
 game_over(Player-Board, Winner) :-
     win_gold_tiles(Player-Board, Winner).
 
-% combat(+Attacker, +Defender, -ResultingPiece)
-combat(Player-_, Player-_, _) :- 
-    !, fail.
-combat(Attacker, 0, Attacker).
-combat(Attacker-AttackerPiece, Defender-AttackedPiece, Attacker-AttackerPiece) :-
+combat(Player-_, Player-_, _) :-
+    write('You can\'t attack your own pieces!'), nl,
+    fail.
+combat(Player, 0, Player) :-
+    write('You can\'t attack an empty tile!'), nl,
+    fail.
+
+combat(Player1-AttackerPiece, Player2-AttackedPiece, Player1-AttackerPiece) :-
     AttackerPiece =< AttackedPiece,
     !.
-combat(_-3, _-1, 0). % Attacker is a triangle and defender is a circle, both will be removed
-combat(_-4, _-3, 0). % Attacker is a square and defender is a triangle, both will be removed
 
-neighboursOffSet([(0, -1), (0, 1), (-1, -1), (-1, 0), (1, 1), (1, 0)]).
+combat(_-3, _-1, 0).
+combat(_-4, _-3, 0).
+
+neighboursOffSet([(0, -1), (0, 1), (-1, 1), (-1, 0), (1, 1), (1, 0)]).
 get_neighbours(Xi, Yi, Player-Piece, Board, Neighbours) :-
     neighboursOffSet(OffSet),
     get_neighbours(Xi, Yi, Player-Piece, Board, OffSet, Neighbours).
@@ -145,7 +108,7 @@ get_neighbours(Xi, Yi, Player-Piece, Board, [(_, _) | Rest], OtherNeighbours) :-
 
 % filter_moves(+AttackerPiece, +Moves, +Board, -PossibleMoves)
 filter_moves(_, [], _, []).
-filter_moves(Player-Piece, [(X, Y) | Rest], Board, [(X, Y) | FilteredMoves]) :- % valid move added to queue 
+filter_moves(Player-Piece, [(X, Y | Rest)], Board, [(X, Y) | FilteredMoves]) :- % valid move added to queue 
     get_piece(X, Y, Board, Value),
     combat(Player-Piece, Value, _),
     !,
@@ -156,64 +119,34 @@ filter_moves(Player-Piece, [(_,_) | Rest], Board, FilteredMoves):-
 
 % create tuple with position and distance
 add_distance([],_,[]).
-add_distance([(X,Y)| Rest], Distance, [(X,Y,Distance) | RestDist]) :-
+add_distance(Moves, Distance, MovesWithDistance) :-
+    add_distance([(X,Y) | Rest], Distance, [(X,Y,Distance) | RestDist]),
     add_distance(Rest, Distance, RestDist).
 
-% empty_positions(+Board, +Moves, -EmptyPositions)
-empty_positions(_, [], []).
-empty_positions(Board, [(X,Y) | Rest], [(X,Y) | OtherEmptyPositions]) :-
-    get_piece(X, Y, Board, 0),
-    !,
-    empty_positions(Board, Rest, OtherEmptyPositions).
-empty_positions(Board, [(_,_) | Rest], EmptyPositions) :-
-    empty_positions(Board, Rest, EmptyPositions). 
 
-bfs((Xi, Yi), Piece, Player, Board, Moves) :-  
-    MaxMoves is Piece,
-    bfs(Piece, Player, Board, MaxMoves, [(Xi, Yi, 0)], [(Xi,Yi)], Moves).
-
-bfs(_,_,_,_,[],_,[]). % no more moves
-bfs(_,_,_,MaxMoves, [(_,_,MaxMoves) | _], _, []) :- !. % max moves reached
-bfs(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, Moves) :- 
+bfs_moves(_,_,_,_,[],_,[]). % no more moves
+bfs_moves(_,_,_,MaxMoves, [(_,_,MaxMoves) | _], _, []) :- !. % max Moves reached
+bfs_moves(Piece, Player, Board, MaxMoves, [(X,Y,Distance) | Rest], Visited, ListOfMoves) :- 
     Distance < MaxMoves,
     NewDistance is Distance + 1,
     get_neighbours(X, Y, Player-Piece, Board, AllMoves), % includes invalid moves
     filter_moves(Player-Piece, AllMoves, Board, ValidMoves),
     memberchk_list(ValidMoves, Visited, UnVisitedMoves),
 
-    empty_positions(Board, UnVisitedMoves, EmptyPositionsMoves),   % get moves to empty spaces
-    
-    add_distance(EmptyPositionsMoves, NewDistance, EmptyPositionsMovesDist),  % X-Y to X-Y-NewDist
-
-    append(UnVisitedMoves, RecursiveMoves, Moves),    % RestMoves is the recursive result
-    append(UnVisitedMoves, Visited, UpdatedVisited),
-    append(Rest, EmptyPositionsMovesDist, UpdatedRest),
-
-    bfs(Piece, Player, Board, MaxMoves, UpdatedRest, UpdatedVisited, RecursiveMoves).
 
 
-select_cell(Board, Player, X, Y,Value) :-
-    write('Which piece do you wish to move? '), nl,
-    get_cell(Board, X, Y, Value),
-    valid_piece(X, Y, Board, Player-_),
-    !.
 
-select_cell(Board, Player, X, Y,Value) :-
-    write('Invalid cell!'), nl,
-    select_cell(Board, Player, X, Y,Value).
-    
-% get_cell(+Board, -X, -Y, -Value)
-% Asks the user for a cell number and returns the coordinates and value of the cell
+
+
+/* 
+Asks the user for a cell number and returns the coordinates and value of the cell
+get_cell(+Board, -X, -Y, -Value) */
 get_cell(Board, X, Y, Value) :- 
+    repeat,
+    write('Enter cell number: '),
     read_number(N),
-    is_valid_cell(N, Board, Value, X, Y), 
-    !.
-get_cell(Board, X, Y, Value) :-
-    write('Invalid!'), nl,
-    get_cell(Board, X, Y, Value).
+    is_valid_cell(N, Board, Value, X, Y), !.
 
-% is_valid_cell(+N, +Board, -Value, -X, -Y)
-% Checks if the cell number N is valid and returns the coordinates and value of the cell
 is_valid_cell(N, Board, Value, X, Y) :-
     nth0(0, Board, FirstLine),
     length(FirstLine, LineSize),
@@ -223,113 +156,92 @@ is_valid_cell(N, Board, Value, X, Y) :-
     nth0(Y, Line, Value),
     Value \= -1.
 
-% display_game(+Board)
-% Displays the winner of the game
-display_winner(Winner):-
-    write('Game Over!'), nl,
-    player_label(Winner, WinnerLabel),    
-    write(WinnerLabel), write(' player'), write(' won!'), nl,
-    wait_for_enter.
+/*
+choose_move(GameState, human, Move) :-
+    write('Choose a move: '), nl.
 
-% game_cycle(+Player-+Board, +ChosenLevels)
-% Predicate that cycles the game until it is over
-game_cycle(Player-Board, _):-
-    game_over(Player-Board, Winner), !,
-    display_winner(Winner),
-    menu.
-game_cycle(Player-Board, ChosenLevels):-
-    player_label(Player, PlayerLabel),
-    write(PlayerLabel), write(' Player\'s'), write(' turn.'), nl,
-    level(Player, ChosenLevels, Level),
-    choose_move(Board, Player, Level, (Xi, Yi, Xf, Yf)),
-    move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
-    clear,
-    display_game(NewBoard),
-    write_move(Player, Xi, Yi, Xf, Yf, Board),
-    !,
-    game_cycle(NewPlayer-NewBoard, ChosenLevels).    
+choose_move(GameState, computer-Level, Move) :-
+    valid_moves(GameState, Moves),
+    choose_move(Level, GameState, Moves, Move).
 
-% level(+Player, +ChosenLevels, -Level)
-% Returns the level of the player (human, easy_bot or hard_bot)
-level(r, L-_, L).
-level(b, _-L, L).
+valid_moves(GameState, Moves) :-
+    findall(Move, move(GameState, Move, NewState)), Moves).
 
-% player_label(+Player, -PlayerLabel)
-% Returns the label of the player
-player_label(r, 'Red').
-player_label(b, 'Blue').
+choose_move(1, _GameState, Moves, Move) :-
+    random_select(Move, Moves, _Rest).
 
-% write_move(+Player, +Xi, +Yi, +Xf, +Yf, +Board)
-% Writes the move made by the player
-write_move(Player, Xi, Yi, Xf, Yf, Board) :-
-    get_piece(Xi, Yi, Board, Piece),
-    get_cell_number(Xi, Yi, Board, From),
-    get_cell_number(Xf, Yf, Board, To),
-    player_label(Player, PlayerLabel),
-    write('Player '), write(PlayerLabel), write(' moved '), display_cell_value(Piece), 
-    write(' from '), write(From),
-    write(' to '), write(To), nl.
+choose_move(2, GameState, Moves, Move) :-
+    setof(Value-Mv, NewState^(member(Mv, Moves), move(GameState, Mv, NewState), evaluate_board(NewState, Value)), [_V-Move | _]).*/
 
-% get_cell_number(+X, +Y, +Board, -CellNumber)
-% Returns the cell number of the cell (X,Y)
-get_cell_number(X, Y, Board, CellNumber) :-
-    nth0(0, Board, FirstLine),
-    length(FirstLine, LineSize),
-    CellNumber is X * LineSize + Y.
 
-% choose_move(+Board, +Player, +Level, -Move)
-% Asks the user for a move and returns it
-choose_move(Board, Player, human, (Xi, Yi, Xf, Yf)) :-
-    select_cell(Board, Player, Xi, Yi,_),
-    write('Where do you want to move it?'), nl,
-    get_cell(Board, Xf, Yf,_).
-    
-choose_move(Board, Player, human, Move):-
-    write('Invalid move! Try again.'), nl,
-    choose_move(Board, Player, human, Move).
+/*find_pentagon(Board, X, Y) :-
+    get_piece(X, Y, Board, r-5),
+    !.
 
-% random bot
-choose_move(Board, Player, easy_bot, (Xi, Yi, Xf, Yf)) :- 
-    valid_moves(Board, Player, Moves),
-    length(Moves, Length),
-    random(0, Length, Index),
-    nth0(Index, Moves, (Xi, Yi, Xf, Yf)).
+find_pentagon(Board, X, Y) :-
+    get_piece(X, Y, Board, b-5),
+    !.
 
-% greedy bot using the evaluation function and the minimax algorithm
-choose_move(Board, Player, hard_bot, (Xi, Yi, Xf, Yf)) :-
-    valid_moves(Board, Player, Moves),
-    evaluate_moves(Board, Player, Moves, EvaluatedMoves),
-    minimax(EvaluatedMoves, (Xi, Yi, Xf, Yf), _).
 
-evaluate_moves(_, _, [], []).
-evaluate_moves(Board, Player, [(Xi, Yi, Xf, Yf) | Rest], [(Eval, (Xi, Yi, Xf, Yf)) | EvaluatedMoves]) :-
-    move(Player, Board, (Xi, Yi, Xf, Yf), NewPlayer-NewBoard),
-    evaluate_board(NewPlayer-NewBoard, Eval),
-    evaluate_moves(Board, Player, Rest, EvaluatedMoves).
 
-evaluate_board(Player-Board, Eval) :-
-    %win_pentagon_captured(Board, Winner);
-    %win_gold_tiles(Player-Board, Winner),
-    game_over(_-Board, Player),
-    !,
-    Eval is 1000.
+display_winner(Winner) :-
+    write('The winner is: '),
+    write(Winner), nl.
 
-evaluate_board(Player-Board, Eval) :-
-    change_player(Player, OtherPlayer),
-    game_over(_-Board, OtherPlayer),
-    !,
-    Eval is -1000.
+display_player_turn(blue_turn) :-
+    write('Blue Player turn'), nl.
+display_player_turn(State) :-
+    write('Red Player turn'), nl.
 
-evaluate_board(Player-Board, Eval) :-
-    valid_moves(Board, Player, Moves),
-    length(Moves, Eval).
+display_game(Board) :-
+    write('Board printed!'), nl.
 
-minimax([(Eval, Move)], Move, Eval).
-minimax([(Eval, Move) | Rest], BestMove, BestEval) :-
-    minimax(Rest, (Eval2, Move2), _),
-    better_move((Eval, Move), (Eval2, Move2), (BestEval, BestMove)).
+get_move(State, Move, Board) :-
+    get_piece_to_move(State, Board, X, Y, Piece),
+    write('You select: '),
+    write(Piece), nl,
+    get_valid_move(State, Board, X, Y, Piece, Move).
+    % Do something with the move
+    write('Moved!'), nl.
 
-better_move((Eval1, Move1), (Eval2, Move2), (Eval1, Move1)) :-
-    Eval1 > Eval2.
-better_move((Eval1, Move1), (Eval2, Move2), (Eval2, Move2)) :-
-    Eval1 =< Eval2.
+% This gets the piece to move, validates and verifies if it is from the player
+get_piece_to_move(State, Board, X, Y, Piece) :-
+    repeat,
+    write('Piece to Move:'), nl,
+    get_coords(X, Y),
+    nth0(X, Board, Row),
+    nth0(Y, Row, Piece),
+    is_piece_from_player(State, Piece), !.
+
+% This gets the slot to move, validates and verifies if it is valid
+get_valid_move(State, Board, X, Y, Piece, Move) :-
+    repeat,
+    write('Move to:'), nl,
+    get_coords(NEXT_X, NEXT_Y),
+    nth0(NEXT_X, Board, NEXT_Row),
+    nth0(NEXT_Y, NEXT_Row, NEXT_Piece),
+    NEXT_Piece >= 0,
+    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Piece),
+    Move = [X, Y, NEXT_X, NEXT_Y], !.
+
+% Make this
+validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter),
+    write('Validating move!'), nl,
+    is_occuppied(NEXT_X, NEXT_Y, Board), %break here, change for is not_occuppied
+    nth0(X, Board, Row),
+    nth0(Y, Row, Piece),
+    Counter1 is Counter - 1,
+    validate_move(X, Y, NEXT_X, NEXT_Y, Board, Counter1),
+
+is_occuppied(X, Y, Board) :-
+    nth0(X, Board, Row),
+    nth0(Y, Row, Piece),
+    Piece \= 0.
+
+is_piece_from_player(blue_turn, Piece) :-
+    Piece > 5,
+    Piece < 11.
+is_piece_from_player(State, Piece) :-
+    Piece > 0,
+    Piece < 6.
+*/

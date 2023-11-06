@@ -1,19 +1,13 @@
-% display_game/0
-% Init a game board and displays it
 display :-
     initial_state(Board),
     display_game(Board).
 
-% display_game(+Board)
-% Prints the game board
 display_game(Board) :- 
     length(Board, Size),
     MediumLine is integer(Size/2), 
     display_game(Board, 0, MediumLine).
 display_game([], _, _).
-% display_game(+Board, +N, +MediumLine)
-% Recursive predicate to print the game board lines
-display_game([H|T], N, MediumLine) :-
+display_game([H|T], N, MediumLine) :- % Loop pelas linhas da board
     ((N =< MediumLine) -> (left_space(N), display_medium_line(top, H, '   ', ' ')); true),
     ((N =< MediumLine) -> (left_space(N), display_medium_line(top, H, ' ', '     ')); true),
     length(H, LineSize),
@@ -24,14 +18,10 @@ display_game([H|T], N, MediumLine) :-
     NextLine is N + 1,
     display_game(T, NextLine, MediumLine).
 
-% left_space(+N)
-% Prints the left margin of the board
 left_space(N) :-
     N1 is 6-N,
     write_str_times('    ', N1).
 
-% display_medium_line(+Mode, +Line, +Margin, +Padding)
-% Prints the intermediates lines of the board used to complete the hexagon shape
 display_medium_line(_, [], _, _) :- nl.
 display_medium_line(Mode, [H|T], Margin, Padding) :-
     get_delimiters(Mode, A, B),
@@ -45,41 +35,33 @@ display_medium_line(Mode, [H|T], Margin, Padding) :-
     write(New_Margin),
     display_medium_line(Mode, T, Margin, Padding).
 
-% valid_cell(+Value)
-% Checks if its a playable cell
-valid_cell(_-Value) :- Value =\= -1.
-valid_cell(Value) :- Value =\= -1.
+valid_cell(_-Value) :-
+    Value =\= -1.
+valid_cell(Value) :-
+    Value =\= -1.
 
-% get_delimiters(+Mode, -A, -B)
-% Gets the delimiters for the intermediate lines
 get_delimiters(top, A, B) :- A = '/', B = '\\'.
 get_delimiters(bottom, A, B) :- A = '\\', B = '/'.
 
-% display_cells_name_line(+Line, +PreviousValue, +N_Line, +I_Cell, +LineSize)
-% Prints the line with the cell names
 display_cells_name_line([], PreviousValue, _,  _, _) :-
     (valid_cell(PreviousValue) -> C = '|'; C = ' '),
     write(C).
 display_cells_name_line([H|T], PreviousValue, N_Line, I_Cell, LineSize) :-
     ((valid_cell(PreviousValue); valid_cell(H)) -> C = '|'; C = ' '),
     write(C),
-    colored_golden_cell(N_Line, I_Cell, LineSize),
     write('   '),
     display_cell_name(H, N_Line, I_Cell, LineSize),
-    write('  \e[0m'),
+    write('  '),
     New_I_Cell is I_Cell + 1,
     display_cells_name_line(T, H, N_Line, New_I_Cell, LineSize).
 
-% display_cell_name(+Value, +N_Line, +I_Cell, +LineSize)
-% Prints the cell name calculated from the column, line position and board size
+% name is a number that is 
 display_cell_name(-1, _, _, _) :- write('  ').
 display_cell_name(_, N_Line, I_Cell, LineSize) :-
     N is N_Line * LineSize + I_Cell - 1, 
     write(N),
     (N > 9 -> write(''); write(' ')).
 
-% display_cells_values_line(+Line, +PreviousValue)
-% Prints the line with the pieces
 display_cells_values_line([], PreviousValue) :-
     (valid_cell(PreviousValue) -> C = '|'; C = ' '),
     write(C).
@@ -87,32 +69,18 @@ display_cells_values_line([H|T], PreviousValue) :-
     ((valid_cell(PreviousValue); valid_cell(H)) -> C = '|'; C = ' '),
     write(C),
     write('   '),
-    change_color(H),
     display_cell_value(H),
-    reset_color,
     write('   '),
     display_cells_values_line(T, H).
 
-% change_color(+Value)
-% Changes the text based on the value of the cell (player)
-change_color(b-_) :- write('\e[34m').
-change_color(r-_) :- write('\e[31m').
-change_color(_) :- write('\e[0m').
-reset_color :- write('\e[0m').
-
-% display_cell_value(+Value)
-% Prints the piece format based on the value
+% Map board values to characters
 display_cell_value(-1) :- write(' ').
 display_cell_value(0) :- write(' ').
-display_cell_value(_-1) :- put_code(9679). %●
-display_cell_value(_-3) :- put_code(9650). %▲
-display_cell_value(_-4) :- put_code(9724). %◼
-display_cell_value(_-5) :- put_code(11039). %⬟
-
-% colored_golden_cell(+N_Line, +I_Cell, +LineSize)
-% Prints the golden cell in the center of the board
-colored_golden_cell(N_Line, I_Cell, LineSize) :-
-    (N_Line =\= 1, N_Line =\= 5) -> true;
-    Medium is integer(LineSize/2),
-    (N_Line =:= 5 -> Medium2 is Medium + 2; Medium2 is Medium),
-    (I_Cell =:= Medium2 -> write('\e[33m'); write('\e[0m')).
+display_cell_value(r-1) :- put_code(9711). %◯
+display_cell_value(r-3) :- put_code(9651). %△
+display_cell_value(r-4) :- put_code(9723). %◻
+display_cell_value(r-5) :- put_code(11040). %⬠
+display_cell_value(b-1) :- put_code(9679). %●
+display_cell_value(b-3) :- put_code(9650). %▲
+display_cell_value(b-4) :- put_code(9724). %◼
+display_cell_value(b-5) :- put_code(11039). %⬟
