@@ -5,6 +5,8 @@
 :- consult('src/utils').
 :- consult('src/menu').
 :- consult('src/board').
+:- consult('src/ai').
+:- consult('src/bfs').
 :- consult('src/game').
 
 
